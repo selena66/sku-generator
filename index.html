@@ -52,7 +52,10 @@
 <button onclick="generateSKU()">Generate SKU</button>
 
 <h3>Generated SKU</h3>
-<input id="generatedSKU" class="sku-box" readonly>
+<div style="display: flex; gap: 10px;">
+    <input id="generatedSKU" class="sku-box" readonly style="flex: 1;">
+    <button onclick="copySKU()" style="padding: 10px 20px;">Copy</button>
+</div>
 
 <hr>
 
@@ -77,7 +80,7 @@ function autoEngInput(e) {
     let v = e.target.value;
     let out = "";
     for (let ch of v.toLowerCase()) {
-        if (/[a-z0-9 ]/.test(ch)) { out += ch; continue; }
+        if (/[a-z0-9 \-]/.test(ch)) { out += ch; continue; }
         if (autoEngMap[ch]) { out += autoEngMap[ch]; continue; }
         if (ignoredRus.includes(ch)) { continue; }
     }
@@ -88,55 +91,99 @@ document.getElementById("productName").addEventListener("input", autoEngInput);
 document.getElementById("skuInput").addEventListener("input", autoEngInput);
 
 // ------------------------------
-// GOOGLE SHEETS
+// ДАННЫЕ ИЗ ТАБЛИЦЫ
 // ------------------------------
-const SHEET_ID = "1N_SQwQj-qCizFg-0vtl3eqAmbzu7k0eVayOk8TnWL88";
-const API_KEY = "AIzaSyAHR9p32UnfkulreKXxkJ2sjG2rHGo3mS8";
+const colorData = [
+    ["Black", "#000000", "BLK"],
+    ["Pink", "#F7B6C0", "PNK"],
+    ["Turquoise", "#55E1DA", "TURQ"],
+    ["Multicolor", "#FBFDFD", "MULTI"],
+    ["Brown", "#AE4848", "BRN"],
+    ["Cognac", "#DD6524", "COG"],
+    ["Mint green", "#C6F9AA", "MINT"],
+    ["Silver", "#F3F1F1", "SLV"],
+    ["Grey", "#989696", "GRY"],
+    ["Green", "#537F53", "GRN"],
+    ["Camel", "#CA8E1E", "CAM"],
+    ["Beige", "#F7C0A9", "BEG"],
+    ["Caramel-beige", "#F1C472", "CARAMBG"],
+    ["Blue", "#3D7BBA", "BLU"],
+    ["Magenta", "#E52FBC", "MGT"],
+    ["Sky Blue", "#40D5FB", "SKBLU"],
+    ["Red", "#FF0000", "RED"],
+];
 
-async function loadSheet(range) {
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${range}?key=${API_KEY}`;
-    const r = await fetch(url);
-    const d = await r.json();
-    return d.values.slice(1);
-}
+const sizeData = [
+    ["Card", "CARD"],
+    ["Banknote", "CASH"],
+    ["Key up to 7cm", "KEY7"],
+    ["Key 7–10cm", "KEY10"],
+    ["Readers", "READ"],
+    ["Sunglasses", "SUN"],
+    ["7\" Phone", "PH7"],
+    ["Standard", "STD"],
+    ["Large", "LRG"],
+    ["Small", "SM"],
+];
 
-async function init() {
-    const colors = await loadSheet("Color!A:C");
-    const sizes = await loadSheet("Size!A:B");
-    const leathers = await loadSheet("Leather!A:B");
-    const hardware = await loadSheet("Hardware!A:B");
+const leatherData = [
+    ["Vegetable-tanned", "VEGTAN"],
+    ["Chrome-tanned", "CROMTAN"],
+    ["Suede", "SUEDE"],
+    ["Nubuck", "NUBUK"],
+    ["Top-grain", "TOPGR"],
+];
+
+const hardwareData = [
+    ["Silver", "SILV"],
+    ["Gold", "GOLD"],
+    ["Brass", "BRS"],
+    ["Plastic", "PLAST"],
+    ["YKK Metal zipper", "YKKMET"],
+    ["YKK Plastic zipper", "YKKPL"],
+];
+
+function init() {
 
     const colorSel = document.getElementById("colorSelect");
-    colors.forEach(c => {
-        let o = document.createElement("option");
-        o.value = c[2];
-        o.textContent = c[0];
-        o.dataset.hex = c[1];
-        colorSel.appendChild(o);
+    colorData.forEach(c => {
+        if (c[0]) {
+            let o = document.createElement("option");
+            o.value = c[2];
+            o.textContent = c[0];
+            o.dataset.hex = c[1];
+            colorSel.appendChild(o);
+        }
     });
 
     const sizeSel = document.getElementById("sizeSelect");
-    sizes.forEach(s => {
-        let o = document.createElement("option");
-        o.value = s[1];
-        o.textContent = s[0];
-        sizeSel.appendChild(o);
+    sizeData.forEach(s => {
+        if (s[0]) {
+            let o = document.createElement("option");
+            o.value = s[1];
+            o.textContent = s[0];
+            sizeSel.appendChild(o);
+        }
     });
 
     const leatherSel = document.getElementById("leatherSelect");
-    leathers.forEach(l => {
-        let o = document.createElement("option");
-        o.value = l[1];
-        o.textContent = l[0];
-        leatherSel.appendChild(o);
+    leatherData.forEach(l => {
+        if (l[0]) {
+            let o = document.createElement("option");
+            o.value = l[1];
+            o.textContent = l[0];
+            leatherSel.appendChild(o);
+        }
     });
 
     const hardwareSel = document.getElementById("hardwareSelect");
-    hardware.forEach(h => {
-        let o = document.createElement("option");
-        o.value = h[1];
-        o.textContent = h[0];
-        hardwareSel.appendChild(o);
+    hardwareData.forEach(h => {
+        if (h[0]) {
+            let o = document.createElement("option");
+            o.value = h[1];
+            o.textContent = h[0];
+            hardwareSel.appendChild(o);
+        }
     });
 
     colorSel.addEventListener("change", updateColorHex);
@@ -167,20 +214,36 @@ function generateSKU() {
 }
 
 // ------------------------------
+// COPY SKU
+// ------------------------------
+function copySKU() {
+    const sku = document.getElementById("generatedSKU").value;
+    if (sku) {
+        navigator.clipboard.writeText(sku).then(() => {
+            alert("SKU copied!");
+        });
+    }
+}
+
+// ------------------------------
 // PARSE SKU
 // ------------------------------
 function parseSKU() {
-    const input = document.getElementById("skuInput");
-    let raw = input.value;
+    const input = document.getElementById("skuInput").value.trim();
+    if (!input) return;
 
-    let cleaned = raw
-        .replace(/[^\w\- ]/g, "")
-        .replace(/\s*-\s*/g, "-")
-        .trim();
+    // Очищаем от лишних символов
+    let cleaned = input
+        .replace(/[^\w\-]/g, "")
+        .toUpperCase();
 
     let parts = cleaned.split("-");
-    if (parts.length < 5) return;
+    if (parts.length < 5) {
+        alert("SKU должен иметь формат: NAME-COLOR-SIZE-LEATHER-HARDWARE");
+        return;
+    }
 
+    // Заполняем поля
     fillField("productName", parts[0]);
     checkCode("colorSelect", parts[1], "colorHex");
     checkCode("sizeSelect", parts[2]);
