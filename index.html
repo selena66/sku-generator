@@ -1,157 +1,68 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>SKU Generator</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 600px;
-      margin: 40px auto;
-      padding: 20px;
-      line-height: 1.5;
-    }
-    h1 {
-      font-size: 24px;
-      margin-bottom: 20px;
-    }
-    label {
-      display: block;
-      margin-top: 15px;
-      font-weight: bold;
-    }
+<meta charset="UTF-8">
+<title>SKU Generator</title>
+<style>
+    body { font-family: Arial; padding: 20px; max-width: 600px; margin: auto; }
+
+    .row { display: flex; align-items: center; margin-bottom: 15px; }
+    .label { width: 140px; }
+
     select, input {
-      width: 100%;
-      padding: 8px;
-      margin-top: 5px;
-      font-size: 14px;
+        width: 80%;
+        padding: 8px;
+        font-size: 16px;
+        box-sizing: border-box;
     }
-    button {
-      margin-top: 20px;
-      padding: 10px 15px;
-      font-size: 16px;
-      cursor: pointer;
+
+    .color-wrapper {
+        display: flex;
+        width: 80%;
     }
-    #result {
-      margin-top: 20px;
-      font-size: 18px;
-      font-weight: bold;
+
+    .color-select { width: 80%; }
+    .color-hex {
+        width: 20%;
+        border: 1px solid #ccc;
+        background: #eee;
     }
-  </style>
-</head>
-<body>
 
-<h1>SKU Generator</h1>
+    .error-field {
+        border: 3px solid red !important;
+        animation: blinkError 0.6s ease-in-out 2;
+    }
 
-<label>Product Name</label>
-<input type="text" id="productName" placeholder="Example: TALIS" autocomplete="off">
+    @keyframes blinkError {
+        0% { background: #ffe5e5; }
+        50% { background: white; }
+        100% { background: #ffe5e5; }
+    }
 
-<label>Color</label>
-<select id="color">
-  <option value="">—</option>
-  <option value="BLK">Black</option>
-  <option value="PNK">Pink</option>
-  <option value="TURQ">Turquoise</option>
-  <option value="MULTI">Multicolor</option>
-  <option value="BRN">Brown</option>
-  <option value="COG">Cognac</option>
-  <option value="MINT">Mint green</option>
-  <option value="SLV">Silver</option>
-  <option value="GRY">Grey</option>
-  <option value="GRN">Green</option>
-  <option value="CAM">Camel</option>
-  <option value="BEG">Beige</option>
-  <option value="CARAMBG">Caramel-beige</option>
-  <option value="BLU">Blue</option>
-  <option value="MGT">Magenta</option>
-  <option value="SKBLU">Sky Blue</option>
-  <option value="RED">Red</option>
-</select>
+    .warning-field {
+        border: 2px solid orange !important;
+    }
 
-<label>Size</label>
-<select id="size">
-  <option value="">—</option>
-  <option value="CARD">Card</option>
-  <option value="CASH">Banknote</option>
-  <option value="KEY7">Key up to 7cm</option>
-  <option value="KEY10">Key 7–10cm</option>
-  <option value="READ">Readers</option>
-  <option value="SUN">Sunglasses</option>
-  <option value="PH7">7&quot; Phone</option>
-  <option value="STD">Standard</option>
-  <option value="LRG">Large</option>
-  <option value="SM">Small</option>
-</select>
+    .highlight-layer {
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        pointer-events: none;
+    }
 
-<label>Leather</label>
-<select id="leather">
-  <option value="">—</option>
-  <option value="VT">Vegetable-tanned</option>
-  <option value="CT">Chrome-tanned</option>
-  <option value="SUE">Suede</option>
-  <option value="NUB">Nubuck</option>
-  <option value="TOPGR">Top-grain</option>
-  <option value="SPLIT">Split suede lining</option>
-</select>
+    .highlight-yellow {
+        background: rgba(255, 230, 128, 0.6);
+        animation: fadeOut 2s forwards;
+    }
 
-<label>Hardware</label>
-<select id="hardware">
-  <option value="">—</option>
-  <option value="SIL">Silver</option>
-  <option value="GLD">Gold</option>
-  <option value="BRS">Brass</option>
-  <option value="PL">Plastic</option>
-  <option value="YKK">YKK zipper</option>
-  <option value="MZ">Metal zipper</option>
-  <option value="PZ">Plastic zipper</option>
-  <option value="SNAP">Snap button</option>
-  <option value="KR">Keyring</option>
-</select>
+    .highlight-red {
+        background: rgba(255, 0, 0, 0.4);
+        animation: fadeOut 2s forwards;
+    }
 
-<button onclick="generateSKU()">Generate SKU</button>
-<button onclick="copySKU()">Copy</button>
+    @keyframes fadeOut {
+        from { opacity: 1; }
+        to { opacity: 0; }
+    }
 
-<div id="result"></div>
-
-<script>
-// Автоматический верхний регистр + английская раскладка
-document.getElementById('productName').addEventListener('input', function() {
-  let value = this.value;
-
-  const map = {
-    'й':'q','ц':'w','у':'e','к':'r','е':'t','н':'y','г':'u','ш':'i','щ':'o','з':'p',
-    'ф':'a','ы':'s','в':'d','а':'f','п':'g','р':'h','о':'j','л':'k','д':'l',
-    'я':'z','ч':'x','с':'c','м':'v','и':'b','т':'n','ь':'m',
-    'Й':'Q','Ц':'W','У':'E','К':'R','Е':'T','Н':'Y','Г':'U','Ш':'I','Щ':'O','З':'P',
-    'Ф':'A','Ы':'S','В':'D','А':'F','П':'G','Р':'H','О':'J','Л':'K','Д':'L',
-    'Я':'Z','Ч':'X','С':'C','М':'V','И':'B','Т':'N','Ь':'M'
-  };
-
-  value = value.split('').map(ch => map[ch] || ch).join('');
-  this.value = value.toUpperCase();
-});
-
-// Генерация SKU
-function generateSKU() {
-  const name = document.getElementById('productName').value.trim().toUpperCase() || "0000";
-  const color = document.getElementById('color').value || "0000";
-  const size = document.getElementById('size').value || "0000";
-  const leather = document.getElementById('leather').value || "0000";
-  const hardware = document.getElementById('hardware').value || "0000";
-
-  const sku = [name, color, size, leather, hardware].join('-');
-  document.getElementById('result').textContent = sku;
-}
-
-// Копирование в буфер
-function copySKU() {
-  const text = document.getElementById('result').textContent;
-  if (!text) return;
-
-  navigator.clipboard.writeText(text);
-  alert("Copied: " + text);
-}
-</script>
-
-</body>
-</html>
+    .sku-box { width: 100%; padding
