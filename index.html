@@ -5,64 +5,226 @@
 <title>SKU Generator</title>
 <style>
     body { font-family: Arial; padding: 20px; max-width: 600px; margin: auto; }
-
     .row { display: flex; align-items: center; margin-bottom: 15px; }
     .label { width: 140px; }
-
-    select, input {
-        width: 80%;
-        padding: 8px;
-        font-size: 16px;
-        box-sizing: border-box;
-    }
-
-    .color-wrapper {
-        display: flex;
-        width: 80%;
-    }
-
+    select, input { width: 80%; padding: 8px; font-size: 16px; box-sizing: border-box; }
+    .color-wrapper { display: flex; width: 80%; }
     .color-select { width: 80%; }
-    .color-hex {
-        width: 20%;
-        border: 1px solid #ccc;
-        background: #eee;
+    .color-hex { width: 20%; border: 1px solid #ccc; background: #eee; }
+    .error-field { border: 3px solid red !important; animation: blinkError 0.6s ease-in-out 2; }
+    @keyframes blinkError { 0% { background: #ffe5e5; } 50% { background: white; } 100% { background: #ffe5e5; } }
+    .warning-field { border: 2px solid orange !important; }
+    .highlight-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+    .highlight-yellow { background: rgba(255, 230, 128, 0.6); animation: fadeOut 2s forwards; }
+    .highlight-red { background: rgba(255, 0, 0, 0.4); animation: fadeOut 2s forwards; }
+    @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+    .sku-box { width: 100%; padding: 10px; font-size: 18px; margin-top: 20px; }
+</style>
+</head>
+<body>
+
+<h2>SKU Generator</h2>
+
+<div class="row">
+    <div class="label">Product Name</div>
+    <input id="productName" placeholder="Enter name">
+</div>
+
+<div class="row">
+    <div class="label">Color</div>
+    <div class="color-wrapper">
+        <select id="colorSelect" class="color-select"></select>
+        <div id="colorHex" class="color-hex"></div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="label">Size</div>
+    <select id="sizeSelect"></select>
+</div>
+
+<div class="row">
+    <div class="label">Leather</div>
+    <select id="leatherSelect"></select>
+</div>
+
+<div class="row">
+    <div class="label">Hardware</div>
+    <select id="hardwareSelect"></select>
+</div>
+
+<button onclick="generateSKU()">Generate SKU</button>
+
+<h3>Generated SKU</h3>
+<input id="generatedSKU" class="sku-box" readonly>
+
+<hr>
+
+<h3>Parse SKU</h3>
+<div class="row">
+    <input id="skuInput" placeholder="Paste SKU here">
+</div>
+<button onclick="parseSKU()">Parse SKU</button>
+
+<script>
+// ------------------------------
+// AUTO‑ENG MAP
+// ------------------------------
+const autoEngMap = {
+    'й':'q','ц':'w','у':'e','к':'r','е':'t','н':'y','г':'u','ш':'i','щ':'o','з':'p',
+    'ф':'a','ы':'s','в':'d','а':'f','п':'g','р':'h','о':'j','л':'k','д':'l',
+    'я':'z','ч':'x','с':'c','м':'v','и':'b','т':'n','ь':'m'
+};
+const ignoredRus = ['х','ъ','ж','э','б','ю'];
+
+function autoEngInput(e) {
+    let v = e.target.value;
+    let out = "";
+    for (let ch of v.toLowerCase()) {
+        if (/[a-z0-9 ]/.test(ch)) { out += ch; continue; }
+        if (autoEngMap[ch]) { out += autoEngMap[ch]; continue; }
+        if (ignoredRus.includes(ch)) { continue; }
+    }
+    e.target.value = out;
+}
+
+document.getElementById("productName").addEventListener("input", autoEngInput);
+document.getElementById("skuInput").addEventListener("input", autoEngInput);
+
+// ------------------------------
+// GOOGLE SHEETS
+// ------------------------------
+const SHEET_ID = "1SngwzlxyR5teswDv9HnFRfmpI8gWvxCT";
+const API_KEY = "AIzaSyAHR9p32UnfkulreKXxkJ2sjG2rHGo3mS8";
+
+async function loadSheet(range) {
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${range}?key=${API_KEY}`;
+    const r = await fetch(url);
+    const d = await r.json();
+    return d.values.slice(1);
+}
+
+async function init() {
+    const colors = await loadSheet("Color!A:C");
+    const sizes = await loadSheet("Size!A:B");
+    const leathers = await loadSheet("Leather!A:B");
+    const hardware = await loadSheet("Hardware!A:B");
+
+    const colorSel = document.getElementById("colorSelect");
+    colors.forEach(c => {
+        let o = document.createElement("option");
+        o.value = c[2];
+        o.textContent = c[0];
+        o.dataset.hex = c[1];
+        colorSel.appendChild(o);
+    });
+
+    const sizeSel = document.getElementById("sizeSelect");
+    sizes.forEach(s => {
+        let o = document.createElement("option");
+        o.value = s[1];
+        o.textContent = s[0];
+        sizeSel.appendChild(o);
+    });
+
+    const leatherSel = document.getElementById("leatherSelect");
+    leathers.forEach(l => {
+        let o = document.createElement("option");
+        o.value = l[1];
+        o.textContent = l[0];
+        leatherSel.appendChild(o);
+    });
+
+    const hardwareSel = document.getElementById("hardwareSelect");
+    hardware.forEach(h => {
+        let o = document.createElement("option");
+        o.value = h[1];
+        o.textContent = h[0];
+        hardwareSel.appendChild(o);
+    });
+
+    colorSel.addEventListener("change", updateColorHex);
+}
+
+function updateColorHex() {
+    const sel = document.getElementById("colorSelect");
+    const hex = sel.selectedOptions[0].dataset.hex;
+    const box = document.getElementById("colorHex");
+    box.style.background = hex;
+    box.style.border = "1px solid #ccc";
+}
+
+init();
+
+// ------------------------------
+// GENERATE SKU
+// ------------------------------
+function generateSKU() {
+    let name = document.getElementById("productName").value.replace(/ /g,"").toUpperCase();
+    let color = document.getElementById("colorSelect").value || "0000";
+    let size = document.getElementById("sizeSelect").value || "0000";
+    let leather = document.getElementById("leatherSelect").value || "0000";
+    let hardware = document.getElementById("hardwareSelect").value || "0000";
+
+    document.getElementById("generatedSKU").value =
+        `${name}-${color}-${size}-${leather}-${hardware}`;
+}
+
+// ------------------------------
+// PARSE SKU
+// ------------------------------
+function parseSKU() {
+    const input = document.getElementById("skuInput");
+    let raw = input.value;
+
+    let cleaned = raw
+        .replace(/[^\w\- ]/g, "")
+        .replace(/\s*-\s*/g, "-")
+        .trim();
+
+    let parts = cleaned.split("-");
+    if (parts.length < 5) return;
+
+    fillField("productName", parts[0]);
+    checkCode("colorSelect", parts[1], "colorHex");
+    checkCode("sizeSelect", parts[2]);
+    checkCode("leatherSelect", parts[3]);
+    checkCode("hardwareSelect", parts[4]);
+}
+
+function fillField(id, val) {
+    document.getElementById(id).value = val;
+}
+
+function checkCode(selectId, code, hexId=null) {
+    const sel = document.getElementById(selectId);
+    let found = false;
+
+    for (let o of sel.options) {
+        if (o.value === code) {
+            sel.value = code;
+            found = true;
+            break;
+        }
     }
 
-    .error-field {
-        border: 3px solid red !important;
-        animation: blinkError 0.6s ease-in-out 2;
-    }
+    if (!found) {
+        sel.value = "";
+        sel.classList.add("error-field");
 
-    @keyframes blinkError {
-        0% { background: #ffe5e5; }
-        50% { background: white; }
-        100% { background: #ffe5e5; }
-    }
+        if (hexId) {
+            let box = document.getElementById(hexId);
+            box.style.background = "transparent";
+            box.style.border = "3px solid red";
+        }
 
-    .warning-field {
-        border: 2px solid orange !important;
+        setTimeout(() => sel.classList.remove("error-field"), 2000);
+    } else {
+        sel.classList.remove("error-field");
+        if (hexId) updateColorHex();
     }
+}
+</script>
 
-    .highlight-layer {
-        position: absolute;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
-        pointer-events: none;
-    }
-
-    .highlight-yellow {
-        background: rgba(255, 230, 128, 0.6);
-        animation: fadeOut 2s forwards;
-    }
-
-    .highlight-red {
-        background: rgba(255, 0, 0, 0.4);
-        animation: fadeOut 2s forwards;
-    }
-
-    @keyframes fadeOut {
-        from { opacity: 1; }
-        to { opacity: 0; }
-    }
-
-    .sku-box { width: 100%; padding
+</body>
+</html>
