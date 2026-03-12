@@ -3,9 +3,129 @@
 <head>
   <meta charset="UTF-8">
   <title>SKU Generator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 20px;
+      line-height: 1.5;
+    }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    select, input {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      font-size: 14px;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px 15px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    #result {
+      margin-top: 20px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
-  <h1>SKU Generator</h1>
-  <p>Your tool will be here.</p>
+
+<h1>SKU Generator</h1>
+
+<label>Product Name</label>
+<input type="text" id="productName" placeholder="Example: TALIS">
+
+<label>Color</label>
+<select id="color">
+  <option value="">—</option>
+  <option value="BLK">Black</option>
+  <option value="PNK">Pink</option>
+  <option value="TURQ">Turquoise</option>
+  <option value="MULTI">Multicolor</option>
+  <option value="BRN">Brown</option>
+  <option value="COG">Cognac</option>
+  <option value="MINT">Mint green</option>
+  <option value="SLV">Silver</option>
+  <option value="GRY">Grey</option>
+  <option value="GRN">Green</option>
+  <option value="CAM">Camel</option>
+  <option value="BEG">Beige</option>
+  <option value="CARAMBG">Caramel-beige</option>
+  <option value="BLU">Blue</option>
+  <option value="MGT">Magenta</option>
+  <option value="SKBLU">Sky Blue</option>
+  <option value="RED">Red</option>
+</select>
+
+<label>Size</label>
+<select id="size">
+  <option value="">—</option>
+  <option value="CARD">Card</option>
+  <option value="CASH">Banknote</option>
+  <option value="KEY7">Key up to 7cm</option>
+  <option value="KEY10">Key 7–10cm</option>
+  <option value="READ">Readers</option>
+  <option value="SUN">Sunglasses</option>
+  <option value="PH7">7&quot; Phone</option>
+  <option value="STD">Standard</option>
+  <option value="LRG">Large</option>
+  <option value="SM">Small</option>
+</select>
+
+<label>Leather</label>
+<select id="leather">
+  <option value="">—</option>
+  <option value="VT">Vegetable-tanned</option>
+  <option value="CT">Chrome-tanned</option>
+  <option value="SUE">Suede</option>
+  <option value="NUB">Nubuck</option>
+  <option value="TOPGR">Top-grain</option>
+  <option value="SPLIT">Split suede lining</option>
+</select>
+
+<label>Hardware</label>
+<select id="hardware">
+  <option value="">—</option>
+  <option value="SIL">Silver</option>
+  <option value="GLD">Gold</option>
+  <option value="BRS">Brass</option>
+  <option value="PL">Plastic</option>
+  <option value="YKK">YKK zipper</option>
+  <option value="MZ">Metal zipper</option>
+  <option value="PZ">Plastic zipper</option>
+  <option value="SNAP">Snap button</option>
+  <option value="KR">Keyring</option>
+</select>
+
+<button onclick="generateSKU()">Generate SKU</button>
+
+<div id="result"></div>
+
+<script>
+function generateSKU() {
+  const name = document.getElementById('productName').value.trim().toUpperCase();
+  const color = document.getElementById('color').value;
+  const size = document.getElementById('size').value;
+  const leather = document.getElementById('leather').value;
+  const hardware = document.getElementById('hardware').value;
+
+  const parts = [name, color, size, leather, hardware].filter(Boolean);
+  const sku = parts.join('-');
+
+  document.getElementById('result').textContent = sku || '';
+}
+</script>
+
 </body>
 </html>
